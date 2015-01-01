@@ -1,43 +1,42 @@
-import json
 import logging
+logging.basicConfig(level=logging.WARNING)
+import json
 import os
-logging.basicConfig(level=logging.ERROR)
 
 class data_handler():
 
 	def __init__(self,file,option="r"):
-		
+		self.logger = logging.getLogger("data")
 		self.file = "./data/" + file
 		if not os.path.exists(self.file):
-			logging.info("file %s does not exist. File was created from scratch for you",self.file)
+			self.logger.info("file %s does not exist. File was created from scratch for you",self.file)
 			f=open(self.file,"w")
 			f.close()
 		
 		self.option = option
-		
-		logging.debug("class initiated with file %s",self.file)
-		logging.debug("class initiated with option %s",self.option)
+		self.logger.debug("accessing file %s with option %s",self.file, self.option)
 
 	def save(self,documents):
-		logging.debug("entering save:")
+		self.logger.debug("saving documents ...")
 		if type(documents) is not list:
 			documents = [documents]
 		
 		my_file = open(self.file,self.option)
+		self.logger.debug("accesing file %s with option %s",self.file,self.option)
 		try:
 			for document in documents:
 				document = json.dumps(document)
 				my_file.write(str(document)+"\n")
 			my_file.close()
-			logging.debug("file written and closed successfully")
+			self.logger.info("%i records saved. File %s closed successfully",len(documents),self.file)
 			return 0
 		except:
 			my_file.close()
-			logging.error("save_documents: something went wrong")
+			self.logger.error("save_documents: something went wrong")
 			return 1
 
 	def load(self):
-		logging.debug("entering load:")
+		self.logger.debug("loading documents ...")
 		with open(self.file) as f:
 			content = f.readlines()
 	
