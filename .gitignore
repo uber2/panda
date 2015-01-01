@@ -1,6 +1,8 @@
 *.pyc
 obsolete*
 test*
+./data/data.json
+/data/data.json
 
 # Windows image file caches
 Thumbs.db
