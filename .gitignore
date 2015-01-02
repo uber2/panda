@@ -3,6 +3,7 @@ obsolete*
 test*
 ./data/data.json
 /data/data.json
+*.log
 
 # Windows image file caches
 Thumbs.db
