@@ -1,47 +1,46 @@
 import logging
-logging.basicConfig(level=logging.INFO,format='%(asctime)s %(name)s %(levelname)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-import data
+logging.basicConfig(level=logging.DEBUG,format='%(asctime)s %(name)s %(levelname)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', filename ="log_panda.log")
 import sys
 sys.path.append('../bfapi/')
+import data
 import bfapi
-
+import pprint
 
 class trackinglist():
 
 	def __init__(self):
 		self.logger = logging.getLogger("trackinglist")
 
-	### checks if asset is being tracked
 	def istracked(self,isin_wkn_ticker):
+	"""checks if asset is being tracked"""
 		isin = bfapi.asset_exists(isin_wkn_ticker)
 		if isin:
 			zebra = data.data_handler("assets.json")
 			assets = zebra.load()
-			self.loger.debug("assets = zebra.load(): %s", assets)
+			self.logger.debug("assets = zebra.load(): %s", assets)
 			if len(assets)==0:
-				self.loger.debug("list is empty")
+				self.logger.debug("list is empty")
 				return False
 			else:
 				assets = assets[0]
-				self.loger.info("%s is tracked as %s",isin_wkn_ticker,isin)
-				self.loger.debug("assets[0]: %s",assets)
-				self.loger.debug("isin: %s in assets[\"isins\"]: %s: %s",isin, assets.values(), isin in assets["isins"])
+				self.logger.info("%s is tracked as %s",isin_wkn_ticker,isin)
+				self.logger.debug("assets[0]: %s",assets)
+				self.logger.debug("isin: %s in assets[\"isins\"]: %s",isin, isin in assets["isins"])
 				return isin in assets["isins"]
 		else:
-			self.loger.info("asset %s is not listed online. Check asset page",self,isin_wkn_ticker)
+			self.logger.info("asset %s is not listed online. Check asset page",self,isin_wkn_ticker)
 	
-	### adds asset to tracking list
 	def track(self,isin_wkn_ticker):
-		self.loger.debug("trying to add %s to tracking list",isin_wkn_ticker)
+	"""adds asset to tracking list"""
+		self.logger.debug("trying to add %s to tracking list",isin_wkn_ticker)
 		isin = bfapi.asset_exists(isin_wkn_ticker)
-			
-		self.loger.info("track: isin confirmed as %s",isin)
+		self.logger.info("track: isin confirmed as %s",isin)
 		if isin: # check if asset has a proper page online
 			if not self.istracked(isin): # check if asset is tracked already
-				self.loger.info("asset %s is going to be saved as %s",isin_wkn_ticker,isin)
+				self.logger.info("asset %s is going to be saved as %s",isin_wkn_ticker,isin)
 				zebra = data.data_handler("assets.json","w")
 				li_assets = zebra.load()
-				self.loger.debug("li_assets = zebra.load(): %s",li_assets)
+				self.logger.debug("li_assets = zebra.load(): %s",li_assets)
 				if len(li_assets)==0:
 					list_of_assets = [isin]
 				else:
@@ -49,33 +48,33 @@ class trackinglist():
 					list_of_assets.append(isin)
 					
 				self._save_list_of_assets_to_file(list_of_assets)
-				self.loger.info("asset %s added to tracking list",isin)
+				self.logger.info("asset %s added to tracking list",isin)
 				return 0
 			else:
-				self.loger.info("assets %s is already tracked",isin)
+				self.logger.info("assets %s is already tracked",isin)
 				return 1
 		else:
-			self.loger.info("asset %s is not listed online. Check asset page",isin_wkn_ticker)
+			self.logger.info("asset %s is not listed online. Check asset page",isin_wkn_ticker)
 			return 1
 			
-	### removes asset from tracking list
 	def untrack(self,isin_wkn_ticker):
+	"""removes asset from tracking list"""
 		isin = bfapi.asset_exists(isin_wkn_ticker)
 		if isin:
 			if self.istracked(isin):
 				zebra = data.data_handler("assets.json","w")
 				assets = zebra.load()[0]["isins"]
-				self.loger.debug("assets directly after load: %s",assets)
+				self.logger.debug("assets directly after load: %s",assets)
 				assets.remove(isin)
-				self.loger.debug("removing asset %s",isin)
-				self.loger.debug("assets directly after removal: %s",assets)
+				self.logger.debug("removing asset %s",isin)
+				self.logger.debug("assets directly after removal: %s",assets)
 				self._save_list_of_assets_to_file(assets)
-				self.loger.info("assets %s has been removed from the tracking list",isin)
+				self.logger.info("assets %s has been removed from the tracking list",isin)
 			else:
-				self.loger.info("asset has not been tracked in the first place")
-	
-	### convenience function: does what it says
+				self.logger.info("asset has not been tracked in the first place")
+
 	def _save_list_of_assets_to_file(self,isins):
+		"""convenience function: does what it says"""
 		if not type(isins) is list:
 			isins = [isins]
 		
@@ -83,22 +82,22 @@ class trackinglist():
 		zebra = data.data_handler("assets.json","w")
 		zebra.save(di_assets)
 
-	### crawls the list of all etfs and adds them to the tracking list
 	def autoupdate(self):
+		"""crawls lists of etfs from Deutsche Boerse and adds them to the tracking list"""
 		etfs = bfapi.get_dict_of_all_etfs()
 		isins = etfs.values()
 		for item in isins:
 			self.track(item)
 			
-	### some pretty printing		
 	def pretty(self):
+		"""some pretty printing"""
 		zebra = data.data_handler("assets.json","w")
 		assets = zebra.load()[0]["isins"]
 		for item in assets:
 			print(item)
 	
-	### returns a list of all ISINs on the tracking list
 	def get_list(self):
+		"""returns a list of all ISINs on the tracking list"""
 		zebra = data.data_handler("assets.json")
 		zebra = zebra.load()[0]
 		isins = zebra["isins"]
@@ -109,15 +108,39 @@ class bear():
 		self.logger = logging.getLogger("bear")
 
 	def eat(self):
+		"""Wrapper: Loads tracking list, downloads records, and save them"""
 		isins = trackinglist().get_list()
+		self.logger.info("%i assets in tracking list",len(isins))
+		quotes = []
 		self.logger.info("downloading data")
-		quotes = bfapi.get(isins)
-		self.logger.info("%i records downloaded",len(quotes))
-		self.logger.info("save data")
+		for i in range(1,4):
+			self.logger.info("attempt %i",i)
+			new_quotes = bfapi.get(isins)
+			self.logger.info("%i records downloaded in attempt %i",len(new_quotes),i)
+			if not len(new_quotes)==0:
+				quotes = quotes + new_quotes
+			isins = self._get_missing_ISINS(quotes,isins)
+		
+		self.logger.info("Total of %i records downloaded",len(quotes))
+		self.logger.info("saving data")
 		monkey = data.data_handler("data.json","a")
 		monkey.save(quotes)
 
+	def _get_missing_ISINS(self,quotes,ISINS):
+		"""outputs ISINs which have been skipped during scraping"""
+		self.logger.debug("type(ISINS): %s",type(ISINS))
+		ISINS = set(ISINS)
+		ISINS_downloaded = set()
+		self.logger.debug("len(quotes): %i",len(quotes))
+		self.logger.debug("quotes: %s",pprint.pformat(quotes))
+		for i in range(0,len(quotes)):
+			self.logger.debug("type(quotes[%i]): %s",i,type(quotes[i]))
+			self.logger.debug("quotes[%i]: %s",i,quotes[i])
+			ISINS_downloaded.add(quotes[i]["ISIN"])
+		ISINS_missing = list(ISINS.difference(ISINS_downloaded))
+		return ISINS_missing
 		
-		
-	
+if __name__ == "__main__":
+	panda = bear()
+	panda.eat()
 
